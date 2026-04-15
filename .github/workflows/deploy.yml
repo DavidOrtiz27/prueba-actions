@@ -41,10 +41,11 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             # Buscar el proceso que usa el puerto 8080 (o el configurado) y matarlo
-            PID=$(lsof -t -i:8080)
+            PID=$(lsof -t -i:8081)
             if [ ! -z "$PID" ]; then
               kill -9 $PID
             fi
             
             cd /root/apps/test-usochicamocha
-            nohup java -jar -Dspring.profiles.active=prod UsochicamochaBacken-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            # Usamos *.jar para que tome el archivo sin importar la versión exacta
+            nohup java -jar -Dspring.profiles.active=prod *.jar > app.log 2>&1 &
