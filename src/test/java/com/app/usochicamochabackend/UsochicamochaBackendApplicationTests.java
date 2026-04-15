@@ -63,7 +63,7 @@ class UsochicamochaBackendApplicationTests {
 
         // Then - Verify login
         assertNotNull(loginResponse);
-        assertEquals("usuario-incorrecto", loginResponse.username());
+        assertEquals("usuario-incorrecto", loginResponse.message());
         assertNotNull(loginResponse.jwt());
         assertNotNull(loginResponse.refreshToken());
     }
