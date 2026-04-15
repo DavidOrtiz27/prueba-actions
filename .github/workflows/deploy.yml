@@ -1,0 +1,50 @@
+name: CD - Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests
+
+      - name: Copy JAR to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "target/UsochicamochaBacken-0.0.1-SNAPSHOT.jar"
+          target: "/root/apps/test-usochicamocha"
+          strip_components: 1
+
+      - name: Execute remote commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            # Buscar el proceso que usa el puerto 8080 (o el configurado) y matarlo
+            PID=$(lsof -t -i:8080)
+            if [ ! -z "$PID" ]; then
+              kill -9 $PID
+            fi
+            
+            cd /root/apps/test-usochicamocha
+            nohup java -jar -Dspring.profiles.active=prod UsochicamochaBacken-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
